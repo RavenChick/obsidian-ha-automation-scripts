@@ -22,10 +22,3 @@ For security, pass credentials via system environment variables instead of hardc
 export HA_BASE_URL="[http://127.0.0.1:8123/api](http://127.0.0.1:8123/api)"
 export HA_TOKEN="your_long_lived_access_token"
 export OBSIDIAN_VAULT_PATH="/path/to/your/obsidian_vault"
-```
-ch Stack
-Languages: Python 3, Bash (Shell)
-
-Integrations: Home Assistant REST API, Obsidian Markdown Architecture
-
-Environment: Debian Linux, Systemd Services
