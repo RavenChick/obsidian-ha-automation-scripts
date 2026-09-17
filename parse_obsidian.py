@@ -6,7 +6,7 @@ import requests
 from datetime import datetime
 
 # --- ПУТИ К ФАЙЛАМ ---
-VAULT_DIR = "/home/ravenchickd/obsidian_vault"
+VAULT_DIR = os.getenv("OBSIDIAN_VAULT_PATH", "/home/user/obsidian_vault")
 INBOX_DIR = os.path.join(VAULT_DIR, "00_Inbox")
 
 inbox_matches = glob.glob(os.path.join(INBOX_DIR, "Дела на*.md"))
@@ -18,8 +18,8 @@ ARCHIVE_FILE = os.path.join(VAULT_DIR, "30_Archive/Completed_Log.md")
 BACKLOG_FILE = os.path.join(PROJECTS_DIR, "Backlog.md")
 
 # --- НАСТРОЙКИ HOME ASSISTANT ---
-HA_BASE_URL = "http://127.0.0.1:8123/api"
-HA_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIxZGU2MmQzYmJmMTA0ZTU2OWYxZmVhZmIyN2NlMmY3NiIsImlhdCI6MTc4MzU5NDc5MiwiZXhwIjoyMDk4OTU0NzkyfQ.4UpGlKlrsAb8s7KPnT1Lazv-Pvqd6ds0T-E-otkYS_I"
+HA_BASE_URL = os.getenv("HA_BASE_URL", "http://127.0.0.1:8123/api")
+HA_TOKEN = os.getenv("HA_TOKEN", "YOUR_HOME_ASSISTANT_LONG_LIVED_TOKEN")
 TODO_ENTITY_ID = "todo.tekushchie_dela_na_den"
 
 HA_HEADERS = {
@@ -29,46 +29,20 @@ HA_HEADERS = {
 
 # --- МАППИНГ ТЕГОВ ---
 TAG_MAP = {
-    # 10_Projects
-    "волга": os.path.join(PROJECTS_DIR, "Волга/Волга.md"),
-    "стройка": os.path.join(PROJECTS_DIR, "Стройка/Стройка.md"),
-    "работа": os.path.join(PROJECTS_DIR, "Работа/Дела по работе.md"),
-    "мордор": os.path.join(PROJECTS_DIR, "План Мордор/План Мордор.md"),
-    "мастит": os.path.join(PROJECTS_DIR, "Mastitis/Mastitis.md"),
-    "mastitis": os.path.join(PROJECTS_DIR, "Mastitis/Mastitis.md"),
-    "сад": os.path.join(PROJECTS_DIR, "Home_Garden/По саду.md"),
-    "дом": os.path.join(PROJECTS_DIR, "Home_Garden/По квартире.md"),
-
-    # 02_Learning
-    "docker": os.path.join(VAULT_DIR, "02_Learning/Docker/2026-09-02-Docker-Log.md"),
-    "докер": os.path.join(VAULT_DIR, "02_Learning/Docker/2026-09-02-Docker-Log.md"),
-    "study": os.path.join(VAULT_DIR, "02_Learning/Science_Research/Научные заметки_0046.md"),
-    "наука": os.path.join(VAULT_DIR, "02_Learning/Science_Research/Научные заметки_0046.md"),
-    "bio": os.path.join(VAULT_DIR, "02_Learning/Science_Research/Научные заметки_0046.md"),
-
-    # 20_Resources
-    "деньги": os.path.join(RESOURCES_DIR, "Finance/Учёт расходов_0013.md"),
-    "финансы": os.path.join(RESOURCES_DIR, "Finance/Учёт расходов_0013.md"),
-    "зубы": os.path.join(RESOURCES_DIR, "Health/ЗУБЫ_0030.md"),
-    "здоровье": os.path.join(RESOURCES_DIR, "Health/ЗУБЫ_0030.md"),
-    "соседи": os.path.join(RESOURCES_DIR, "Home_Garden/Соседи.md"),
-    "любимая": os.path.join(RESOURCES_DIR, "Personal/Любимая/Подарки Саше.md"),
-    "кудасходить": os.path.join(RESOURCES_DIR, "Personal/Куда сходить/Места.md"),
-    "досуг": os.path.join(RESOURCES_DIR, "Personal/Куда сходить/Места.md"),
-    "др": os.path.join(RESOURCES_DIR, "Personal/Дни рождения_0036.md"),
-    "железо": os.path.join(RESOURCES_DIR, "Tech_Hardware/Компы_0021.md"),
-    "пк": os.path.join(RESOURCES_DIR, "Tech_Hardware/Компы_0021.md"),
-    "steam": os.path.join(RESOURCES_DIR, "Media_Hobbies/Для steam_0015.md"),
+    "projects": os.path.join(PROJECTS_DIR, "Projects.md"),
+    "work": os.path.join(PROJECTS_DIR, "Work.md"),
+    "docker": os.path.join(VAULT_DIR, "02_Learning/Docker/Docker-Log.md"),
+    "study": os.path.join(VAULT_DIR, "02_Learning/Science/Research.md"),
+    "finance": os.path.join(RESOURCES_DIR, "Finance/Expenses.md"),
+    "tech": os.path.join(RESOURCES_DIR, "Tech_Hardware/PC.md"),
 }
 
 def append_to_file(file_path, text):
-    """Дописывает строку в файл."""
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     with open(file_path, "a", encoding="utf-8") as f:
         f.write(text + "\n")
 
 def clear_ha_todo_list():
-    """Очищает дашборд Home Assistant."""
     url_get = f"{HA_BASE_URL}/services/todo/get_items"
     payload = {"entity_id": TODO_ENTITY_ID, "status": ["needs_action", "completed"]}
     
@@ -92,7 +66,7 @@ def clear_ha_todo_list():
             requests.post(url_remove, json=rem_payload, headers=HA_HEADERS, timeout=5)
 
     except Exception as e:
-        print(f"[HA] Ошибка очистки Home Assistant: {e}")
+        print(f"[HA] Error clearing Home Assistant todo items: {e}")
 
 def get_target_file(raw_line):
     tags = re.findall(r"#([\w/А-Яа-яЁё]+)", raw_line)
@@ -103,7 +77,6 @@ def get_target_file(raw_line):
     return BACKLOG_FILE
 
 def clean_completed_from_file(file_path):
-    """Удаляет выполненные задачи [- [x]] из файла и отправляет их в Архив."""
     if not os.path.exists(file_path):
         return 0
 
@@ -116,7 +89,6 @@ def clean_completed_from_file(file_path):
 
     for line in lines:
         raw_line = line.strip()
-        # Если это закрытая задача -> переносим в Архив
         if re.match(r"^\s*-\s*\[[xX]\]", raw_line):
             append_to_file(ARCHIVE_FILE, f"- [{today_str}] {raw_line}")
             archived_count += 1
@@ -131,7 +103,7 @@ def clean_completed_from_file(file_path):
 
 def process_nightly_inbox():
     if not os.path.exists(INBOX_FILE):
-        print(f"Файл {INBOX_FILE} не найден.")
+        print(f"File {INBOX_FILE} not found.")
         return
 
     with open(INBOX_FILE, "r", encoding="utf-8") as f:
@@ -144,36 +116,31 @@ def process_nightly_inbox():
     for line in lines:
         raw_line = line.strip()
 
-        # 1. Завершенные задачи [- [x]] -> стираем навсегда (не сохраняем)
         if re.match(r"^\s*-\s*\[[xX]\]", raw_line):
             deleted_completed += 1
             continue
 
-        # 2. Незавершенные задачи [- [ ]] -> переносим в Backlog/Проект
         if re.match(r"^\s*-\s*\[\s*\]", raw_line):
             target_path = get_target_file(raw_line)
             append_to_file(target_path, raw_line)
             moved_active += 1
             continue
 
-        # 3. Все остальное (мысли, заметки, wiki-ссылки [[...]]) -> оставляем в файле
         remaining_lines.append(line)
 
-    # Перезаписываем Инбокс: сохраняем заголовок и мысли/заметки
     with open(INBOX_FILE, "w", encoding="utf-8") as f:
         if not remaining_lines or not remaining_lines[0].startswith("# "):
-            f.write("# Дела на сегодня\n\n")
+            f.write("# Tasks for today\n\n")
         f.writelines(remaining_lines)
 
-    # --- ОЧИСТКА БЭКЛОГА И ПРОЕКТОВ ОТ ВЫПОЛНЕННЫХ ЗАДАЧ ---
     total_archived = clean_completed_from_file(BACKLOG_FILE)
     for target_file in set(TAG_MAP.values()):
         total_archived += clean_completed_from_file(target_file)
 
-    print(f"[{datetime.now()}] Разбор завершен.")
-    print(f"- Удалено закрытых из Инбокса: {deleted_completed}")
-    print(f"- Перенесено активных в Бэклог/Проекты: {moved_active}")
-    print(f"- Отправлено в Архив из Бэклога/Проектов: {total_archived}")
+    print(f"[{datetime.now()}] Inbox parse completed.")
+    print(f"- Deleted finished from inbox: {deleted_completed}")
+    print(f"- Moved active to backlog: {moved_active}")
+    print(f"- Sent to archive: {total_archived}")
 
     clear_ha_todo_list()
 
