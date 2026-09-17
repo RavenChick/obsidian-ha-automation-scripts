@@ -1,38 +1,31 @@
 # Obsidian Vault & Server Automation Suite
 
-A collection of Python and Bash automation utilities deployed on a Debian home server for managing Obsidian markdown structures, task tracking, and gateway routing.
+A collection of Python and Bash automation utilities deployed on a home server for managing Obsidian markdown structures, task tracking with Home Assistant, and gateway routing.
 
 ## Overview & Included Scripts
 
 ### 1. `parse_obsidian.py`
-Automated parser for Obsidian vault notes. Reads markdown AST/metadata, cleans up frontmatter formatting, and generates structured index files or daily status summaries.
+Automated parser for Obsidian vault notes. Reads markdown tasks, organizes active items into project/backlog structures, archives completed tasks, and clears daily tracking lists via Home Assistant REST API.
 
 ### 2. `sync_obsidian_todo.py`
-Task management and synchronization script. Parses todo lists (`- [ ]` / `- [x]`) across daily notes, archives completed tasks, and pushes updates via local APIs.
+Task synchronization script. Parses pending checklist items (`- [ ]`) from daily Obsidian notes and syncs them directly into Home Assistant To-Do entities without producing duplicates.
 
 ### 3. `start-gateway.sh`
-System bootstrap and network gateway configuration shell script. Handles routing initialization, service dependency checks, and environment setup on startup.
+System bootstrap and network gateway configuration shell script. Handles routing initialization (Xray TProxy) and Wi-Fi Access Point creation via `lnxrouter`.
 
-## Deployment & Usage
+## Setup & Configuration
 
-### Prerequisites
-- Python 3.10+
-- Linux (Debian/Ubuntu) server environment
+### Environment Variables
+For security, pass credentials via system environment variables instead of hardcoding:
 
-### Execution Examples
 ```bash
-# Parse Obsidian vault metadata
-python3 parse_obsidian.py
+export HA_BASE_URL="[http://127.0.0.1:8123/api](http://127.0.0.1:8123/api)"
+export HA_TOKEN="your_long_lived_access_token"
+export OBSIDIAN_VAULT_PATH="/path/to/your/obsidian_vault"
 
-# Sync and archive Obsidian todo tasks
-python3 sync_obsidian_todo.py
-
-# Execute gateway service runner
-bash start-gateway.sh
-
-Tech Stack
+ch Stack
 Languages: Python 3, Bash (Shell)
 
-Environment: Debian Linux, systemd cron/timers
+Integrations: Home Assistant REST API, Obsidian Markdown Architecture
 
-Data Formats: Markdown, JSON, YAML
+Environment: Debian Linux, Systemd Services
